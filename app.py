@@ -15,12 +15,25 @@ app = Flask(__name__)
 # Load environment variables
 load_dotenv()
 
-# Configure APIs
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+# Configure APIs safely
+GEMINI_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_KEY = os.getenv("GROQ_API_KEY")
 
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+if GEMINI_KEY:
+    genai.configure(api_key=GEMINI_KEY)
+    gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+else:
+    gemini_model = None
+    print("Warning: GEMINI_API_KEY not found.")
+
+if GROQ_KEY:
+    groq_client = Groq(api_key=GROQ_KEY)
+else:
+    groq_client = None
+    print("Warning: GROQ_API_KEY not found.")
+
 GROQ_MODEL = "llama-3.3-70b-versatile"
+
 
 # Slide creation functions (unchanged from your code)
 def set_slide_background(slide, color):
@@ -35,6 +48,8 @@ def generate_slide_content(section, topic):
         
         # Try Groq first
         try:
+            if not groq_client:
+                raise Exception("Groq client not initialized")
             completion = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=[{"role": "user", "content": prompt}],
@@ -43,8 +58,11 @@ def generate_slide_content(section, topic):
         except Exception as groq_err:
             print(f"Groq error: {groq_err}, falling back to Gemini")
             # Fallback to Gemini
+            if not gemini_model:
+                return "API keys missing. Could not generate content."
             response = gemini_model.generate_content(prompt)
             return response.text
+
             
     except Exception as e:
         print(f"Error generating content for {section}: {e}")
@@ -56,6 +74,8 @@ def generate_sections(topic):
         
         # Try Groq first
         try:
+            if not groq_client:
+                raise Exception("Groq client not initialized")
             completion = groq_client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=[{"role": "user", "content": prompt}],
@@ -64,8 +84,11 @@ def generate_sections(topic):
         except Exception as groq_err:
             print(f"Groq error: {groq_err}, falling back to Gemini")
             # Fallback to Gemini
+            if not gemini_model:
+                return ["Introduction", "Key Concepts", "API Key Error"]
             response = gemini_model.generate_content(prompt)
             sections_text = response.text
+
             
         return [s.strip() for s in sections_text.split(',')]
     except Exception as e:
