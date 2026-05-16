@@ -4,12 +4,13 @@ import io
 from flask import Flask, request, send_file, render_template, jsonify
 from pptx import Presentation
 from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 import google.generativeai as genai
 from groq import Groq
 from dotenv import load_dotenv
+import random
 
 app = Flask(__name__)
 
@@ -44,9 +45,47 @@ def set_slide_background(slide, color):
     fill.solid()
     fill.fore_color.rgb = color
 
-def generate_slide_content(section, topic):
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    return RGBColor(*tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4)))
+
+def get_ai_theme(topic):
     try:
-        prompt = f"Write a brief paragraph (3-4 sentences) about '{section}' in the context of {topic}."
+        prompt = f"Based on the topic '{topic}', suggest a professional color palette. Return ONLY two hex codes (primary and secondary) separated by a comma. Example: #0D47A1,#FF9800"
+        
+        # Try Groq first
+        try:
+            if not groq_client:
+                raise Exception("Groq client not initialized")
+            completion = groq_client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            colors = completion.choices[0].message.content.strip().split(',')
+        except Exception:
+            if not gemini_model:
+                return ["#0D47A1", "#FF9800"]
+            response = gemini_model.generate_content(prompt)
+            colors = response.text.strip().split(',')
+        
+        if len(colors) >= 2:
+            return [c.strip() for c in colors[:2]]
+    except Exception:
+        pass
+    return ["#0D47A1", "#FF9800"] # Default colors
+
+def generate_slide_content(section, topic, language):
+    try:
+        prompt = f"""
+        Create minimalist, professional content for a presentation slide about '{section}' in the context of '{topic}'.
+        Rules:
+        - Output must be in {language}.
+        - Provide exactly 2 to 3 very concise, high-impact bullet points.
+        - Focus on absolute accuracy and maximum clarity.
+        - Use very few words; avoid any overflow.
+        - Start each line with a bullet symbol (•).
+        - End with a one-sentence "Key Insight".
+        """
         
         # Try Groq first
         try:
@@ -61,18 +100,54 @@ def generate_slide_content(section, topic):
             print(f"Groq error: {groq_err}, falling back to Gemini")
             # Fallback to Gemini
             if not gemini_model:
-                return "API keys missing. Could not generate content."
+                return "• API keys missing.\n• Could not generate content."
             response = gemini_model.generate_content(prompt)
             return response.text
-
-            
     except Exception as e:
         print(f"Error generating content for {section}: {e}")
-        return f"Content for {section} could not be generated. Please add details manually."
+        return f"• Content for {section} could not be generated.\n• Please add details manually."
 
-def generate_sections(topic):
+def get_template_styles(template_name, theme_colors):
+    """Define styles for different templates."""
+    primary = theme_colors[0]
+    secondary = theme_colors[1]
+    
+    styles = {
+        'modern': {
+            'bg': RGBColor(255, 255, 255),
+            'title_color': hex_to_rgb(primary),
+            'text_color': RGBColor(44, 62, 80),
+            'accent': hex_to_rgb(secondary),
+            'shape': MSO_SHAPE.RECTANGLE
+        },
+        'minimal': {
+            'bg': RGBColor(255, 255, 255),
+            'title_color': RGBColor(0, 0, 0),
+            'text_color': RGBColor(50, 50, 50),
+            'accent': RGBColor(200, 200, 200),
+            'shape': None
+        },
+        'creative': {
+            'bg': RGBColor(245, 245, 250),
+            'title_color': hex_to_rgb(primary),
+            'text_color': RGBColor(33, 33, 33),
+            'accent': hex_to_rgb(secondary),
+            'shape': MSO_SHAPE.ROUNDED_RECTANGLE
+        },
+        'dark': {
+            'bg': RGBColor(20, 20, 25),
+            'title_color': RGBColor(255, 255, 255),
+            'text_color': RGBColor(200, 200, 200),
+            'accent': hex_to_rgb(primary),
+            'shape': MSO_SHAPE.RECTANGLE
+        }
+    }
+    return styles.get(template_name, styles['modern'])
+
+def generate_sections(topic, language, num_slides):
     try:
-        prompt = f"Generate 12-13 key sections/subtopics for a presentation about {topic}. Return as a comma-separated list."
+        num_slides = int(num_slides)
+        prompt = f"Generate exactly {num_slides} key sections/subtopics for a professional presentation about '{topic}'. Return as a comma-separated list in {language}."
         
         # Try Groq first
         try:
@@ -87,23 +162,22 @@ def generate_sections(topic):
             print(f"Groq error: {groq_err}, falling back to Gemini")
             # Fallback to Gemini
             if not gemini_model:
-                return ["Introduction", "Key Concepts", "API Key Error"]
+                return ["Introduction", "Overview", "Details"][:num_slides]
             response = gemini_model.generate_content(prompt)
             sections_text = response.text
-
             
-        return [s.strip() for s in sections_text.split(',')]
+        sections = [s.strip() for s in sections_text.split(',')]
+        # Ensure exact count
+        if len(sections) > num_slides:
+            sections = sections[:num_slides]
+        return sections
     except Exception as e:
         print(f"Error generating sections: {e}")
-        return [
-            "Introduction", "Key Concepts", "Current Trends",
-            "Applications", "Case Studies", "Benefits",
-            "Challenges", "Future Directions", "Conclusion"
-        ]
+        return ["Introduction", "Overview", "Details"][:int(num_slides)]
 
-def add_welcome_slide(prs, title_text):
+def add_welcome_slide(prs, title_text, theme):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
-    set_slide_background(slide, RGBColor(13, 71, 161))
+    set_slide_background(slide, hex_to_rgb(theme[0]))
     for shape in slide.placeholders:
         sp = shape.element
         sp.getparent().remove(sp)
@@ -119,9 +193,9 @@ def add_welcome_slide(prs, title_text):
     p.font.size = Pt(48)
     p.font.color.rgb = RGBColor(255, 255, 255)
     p.alignment = PP_ALIGN.CENTER
-    add_decorative_elements(slide)
+    add_decorative_elements(slide, theme)
 
-def add_content_page(prs, sections, topic):
+def add_content_page(prs, sections, topic, theme):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     for shape in slide.placeholders:
         sp = shape.element
@@ -137,7 +211,7 @@ def add_content_page(prs, sections, topic):
     p.text = f"Presentation Outline: {topic}"
     p.font.bold = True
     p.font.size = Pt(28)
-    p.font.color.rgb = RGBColor(13, 71, 161)
+    p.font.color.rgb = hex_to_rgb(theme[0])
     p.alignment = PP_ALIGN.LEFT
     for i, section in enumerate(sections):
         row = i // 3
@@ -149,7 +223,7 @@ def add_content_page(prs, sections, topic):
             left_pos, top_pos, Inches(2.8), Inches(1.5))
         shape.fill.solid()
         shape.fill.fore_color.rgb = RGBColor(255, 255, 255)
-        shape.line.color.rgb = RGBColor(13, 71, 161)
+        shape.line.color.rgb = hex_to_rgb(theme[0])
         shape.line.width = Pt(1.5)
         tf = shape.text_frame
         p = tf.add_paragraph()
@@ -159,14 +233,17 @@ def add_content_page(prs, sections, topic):
         p.alignment = PP_ALIGN.CENTER
     add_watermark(slide)
 
-def add_content_slide(prs, title_text, content_text, topic):
+def add_content_slide(prs, title_text, content_text, topic, template_style, section):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     for shape in slide.placeholders:
         sp = shape.element
         sp.getparent().remove(sp)
-    set_slide_background(slide, RGBColor(255, 255, 255))
+        
+    set_slide_background(slide, template_style['bg'])
+    
+    # Title
     left = Inches(0.5)
-    top = Inches(0.5)
+    top = Inches(0.3)
     width = Inches(9)
     height = Inches(1)
     txBox = slide.shapes.add_textbox(left, top, width, height)
@@ -175,33 +252,53 @@ def add_content_slide(prs, title_text, content_text, topic):
     p.text = title_text
     p.font.bold = True
     p.font.size = Pt(32)
-    p.font.color.rgb = RGBColor(13, 71, 161)
+    p.font.color.rgb = template_style['title_color']
     p.alignment = PP_ALIGN.LEFT
+
+    # Accent Line
     line = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE,
-        left, Inches(1.3), width, Inches(0.1))
+        left, Inches(1.1), width, Inches(0.05))
     line.fill.solid()
-    line.fill.fore_color.rgb = RGBColor(255, 152, 0)
-    content_box = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE,
-        Inches(0.8), Inches(1.8), Inches(8.5), Inches(4.5))
-    content_box.fill.solid()
-    content_box.fill.fore_color.rgb = RGBColor(240, 240, 240)
-    content_box.line.color.rgb = RGBColor(200, 200, 200)
-    tf = content_box.text_frame
+    line.fill.fore_color.rgb = template_style['accent']
+    line.line.visible = False
+
+    # Content Box (Full Width Minimalist)
+    content_width = Inches(8.5)
+    content_left = Inches(0.75)
+    
+    if template_style['shape']:
+        content_box = slide.shapes.add_shape(
+            template_style['shape'],
+            content_left, Inches(1.8), content_width, Inches(4))
+        content_box.fill.solid()
+        if template_style['bg'] == RGBColor(20, 20, 25): # Dark mode
+            content_box.fill.fore_color.rgb = RGBColor(40, 40, 50)
+        else:
+            content_box.fill.fore_color.rgb = RGBColor(248, 249, 250)
+        content_box.line.color.rgb = template_style['accent']
+        content_box.line.width = Pt(1)
+        tf = content_box.text_frame
+        tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+    else:
+        txBox = slide.shapes.add_textbox(content_left, Inches(1.8), content_width, Inches(4))
+        tf = txBox.text_frame
+        tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+        
     tf.word_wrap = True
     p = tf.add_paragraph()
     p.text = content_text
-    p.font.size = Pt(18)
-    p.font.color.rgb = RGBColor(33, 33, 33)
+    p.font.size = Pt(20)
+    p.font.color.rgb = template_style['text_color']
+    
     add_watermark(slide)
 
-def add_thank_you_slide(prs):
+def add_thank_you_slide(prs, theme):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     for shape in slide.placeholders:
         sp = shape.element
         sp.getparent().remove(sp)
-    set_slide_background(slide, RGBColor(13, 71, 161))
+    set_slide_background(slide, hex_to_rgb(theme[0]))
     left = Inches(1)
     top = Inches(2)
     width = Inches(8)
@@ -214,16 +311,16 @@ def add_thank_you_slide(prs):
     p.font.size = Pt(60)
     p.font.color.rgb = RGBColor(255, 255, 255)
     p.alignment = PP_ALIGN.CENTER
-    add_decorative_elements(slide)
+    add_decorative_elements(slide, theme)
 
-def add_decorative_elements(slide):
+def add_decorative_elements(slide, theme):
     for i in range(3):
         shape = slide.shapes.add_shape(
             MSO_SHAPE.OVAL,
             Inches(0.5 + i*3), Inches(6.5), Inches(0.5), Inches(0.5))
         shape.fill.solid()
-        shape.fill.fore_color.rgb = RGBColor(255, 152, 0)
-        shape.line.color.rgb = RGBColor(255, 152, 0)
+        shape.fill.fore_color.rgb = hex_to_rgb(theme[1])
+        shape.line.color.rgb = hex_to_rgb(theme[1])
 
 def add_watermark(slide):
     left = Inches(7.5)
@@ -238,20 +335,26 @@ def add_watermark(slide):
     p.font.color.rgb = RGBColor(200, 200, 200)
     p.alignment = PP_ALIGN.RIGHT
 
-def create_presentation(title, topic):
+def create_presentation(title, topic, language, num_slides, template_name):
     prs = Presentation()
     # Set document properties
     core_props = prs.core_properties
     core_props.author = "Subham Khandual"
     core_props.title = title
     
-    sections = generate_sections(topic)
-    add_welcome_slide(prs, title)
-    add_content_page(prs, sections, topic)
+    theme = get_ai_theme(topic)
+    style = get_template_styles(template_name, theme)
+    sections = generate_sections(topic, language, num_slides)
+    
+    add_welcome_slide(prs, title, theme)
+    add_content_page(prs, sections, topic, theme)
+    
     for section in sections:
-        content = generate_slide_content(section, topic)
-        add_content_slide(prs, section, content, topic)
-    add_thank_you_slide(prs)
+        content = generate_slide_content(section, topic, language)
+        add_content_slide(prs, section, content, topic, style, section)
+        
+    add_thank_you_slide(prs, theme)
+    
     buffer = io.BytesIO()
     prs.save(buffer)
     buffer.seek(0)
@@ -262,17 +365,24 @@ def create_presentation(title, topic):
 def index():
     return render_template('index.html')
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_file(os.path.join(app.root_path, 'static', 'favicon.ico'), mimetype='image/vnd.microsoft.icon')
+
 @app.route('/generate', methods=['POST'])
 def generate_ppt():
     data = request.get_json()
     title = data.get('title')
     topic = data.get('topic')
+    language = data.get('language', 'English')
+    template = data.get('template', 'modern')
+    num_slides = 8 # Force 8 slides as requested
 
     if not title or not topic:
         return jsonify({'error': 'Title and topic are required'}), 400
 
     try:
-        buffer = create_presentation(title, topic)
+        buffer = create_presentation(title, topic, language, num_slides, template)
         return send_file(
             buffer,
             as_attachment=True,
@@ -280,6 +390,7 @@ def generate_ppt():
             mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation'
         )
     except Exception as e:
+        print(f"Generation error: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

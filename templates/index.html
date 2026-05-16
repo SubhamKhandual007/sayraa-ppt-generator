@@ -10,51 +10,123 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Suppress Favicon 404 -->
+    <link rel="icon" href="data:,">
 </head>
 <body>
     <div class="container-fluid main-container">
         <!-- Header -->
-        <header class="text-center py-4 bg-primary text-white shadow-sm">
-            <h1 class="display-4 fw-bold">SuuSri AI</h1>
-            <p class="lead">Create Stunning Presentations with AI</p>
+        <header class="text-white shadow-sm">
+            <div class="container text-center">
+                <h1 class="display-4 fw-bold">SuuSri AI</h1>
+                <p class="lead">Create Stunning Presentations with AI</p>
+            </div>
         </header>
 
         <!-- Main Content -->
         <div class="container my-5">
             <div class="row justify-content-center">
-                <div class="col-md-6">
+                <div class="col-lg-6 col-md-8">
                     <div class="card shadow-lg border-0">
                         <div class="card-body p-4">
                             <h2 class="card-title text-center mb-4 text-primary">Generate Your Presentation</h2>
                             <form id="pptForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="language" class="form-label fw-bold"><span class="material-icons align-middle">language</span> Language</label>
+                                        <select class="form-select shadow-sm" id="language" name="language">
+                                            <option value="English" selected>English</option>
+                                            <option value="Hindi">Hindi</option>
+                                            <option value="Spanish">Spanish</option>
+                                            <option value="French">French</option>
+                                            <option value="German">German</option>
+                                            <option value="Bengali">Bengali</option>
+                                            <option value="Odia">Odia</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="template" class="form-label fw-bold"><span class="material-icons align-middle">dashboard_customize</span> Smart Template</label>
+                                        <select class="form-select shadow-sm" id="template" name="template">
+                                            <option value="modern" selected>Modern Professional</option>
+                                            <option value="minimal">Minimalist Clean</option>
+                                            <option value="creative">Creative Dynamic</option>
+                                            <option value="dark">Sleek Dark Mode</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="mb-3">
-                                    <label for="title" class="form-label fw-bold"><span class="material-icons align-middle">title</span> Presentation Title</label>
+                                    <label for="title" class="form-label fw-bold">
+                                        <span class="material-icons align-middle">title</span> Presentation Title
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2 voice-btn" data-target="title" title="Voice Input">
+                                            <span class="material-icons align-middle" style="font-size: 18px;">mic</span>
+                                        </button>
+                                    </label>
                                     <input type="text" class="form-control shadow-sm" id="title" name="title" placeholder="Enter title" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="topic" class="form-label fw-bold"><span class="material-icons align-middle">topic</span> Main Topic/Theme</label>
+                                    <label for="topic" class="form-label fw-bold">
+                                        <span class="material-icons align-middle">topic</span> Main Topic/Theme
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2 voice-btn" data-target="topic" title="Voice Input">
+                                            <span class="material-icons align-middle" style="font-size: 18px;">mic</span>
+                                        </button>
+                                    </label>
                                     <input type="text" class="form-control shadow-sm" id="topic" name="topic" placeholder="Enter topic" required>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
-                                    <span class="material-icons me-2">play_arrow</span> Generate Now
+                                <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center mt-3">
+                                    <span class="material-icons me-2">auto_awesome</span> Generate Masterpiece
                                 </button>
                             </form>
                             <div id="status" class="mt-3 text-center d-flex align-items-center justify-content-center">
                                 <span id="timer" class="badge bg-secondary me-2 d-none">0s</span>
                                 <span id="statusText"></span>
                             </div>
-                            <a id="downloadLink" class="btn btn-success w-100 mt-3 d-none" download>
-                                <span class="material-icons me-2">download</span> Download Presentation
-                            </a>
+                            <div id="downloadButtons" class="mt-3 d-none">
+                                <a id="downloadLink" class="btn btn-success w-100 mb-2" download>
+                                    <span class="material-icons me-2">download</span> Download File
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Features Showcase -->
+            <div class="row mt-5 text-center">
+                <div class="col-md-3 mb-4">
+                    <div class="p-3">
+                        <span class="material-icons text-primary fs-1 mb-2">auto_awesome</span>
+                        <h5>AI Optimized</h5>
+                        <p class="small text-muted">Smart bullet points and key takeaways generated by Llama 3 & Gemini.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="p-3">
+                        <span class="material-icons text-primary fs-1 mb-2">article</span>
+                        <h5>Minimalist Design</h5>
+                        <p class="small text-muted">Clean, text-focused layouts for professional clarity and impact.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="p-3">
+                        <span class="material-icons text-primary fs-1 mb-2">palette</span>
+                        <h5>Smart Themes</h5>
+                        <p class="small text-muted">Professional color palettes tailored to your presentation topic.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="p-3">
+                        <span class="material-icons text-primary fs-1 mb-2">slideshow</span>
+                        <h5>Pro PPTX Export</h5>
+                        <p class="small text-muted">High-quality PowerPoint generation with editable slides and themes.</p>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
 
         <!-- Footer -->
         <footer class="text-center py-3 bg-dark text-white fixed-bottom">
-            <p class="mb-0">&copy; 2025 SuuSri AI. Created by Subham Khandual. Powered by Groq & Gemini.</p>
+            <p class="mb-0">&copy; 2026 SuuSri AI. Created by Subham Khandual. Powered by Groq & Gemini.</p>
         </footer>
     </div>
 
