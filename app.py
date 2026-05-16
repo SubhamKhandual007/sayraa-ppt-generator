@@ -1,7 +1,8 @@
+print(">>> DEBUG: App file is being loaded...")
+import os
+import io
 from flask import Flask, request, send_file, render_template, jsonify
-print(">>> DEBUG: Starting Flask App...")
 from pptx import Presentation
-
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
@@ -9,10 +10,9 @@ from pptx.enum.shapes import MSO_SHAPE
 import google.generativeai as genai
 from groq import Groq
 from dotenv import load_dotenv
-import os
-import io
 
 app = Flask(__name__)
+
 
 # Load environment variables
 load_dotenv()
