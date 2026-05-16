@@ -1,5 +1,7 @@
 from flask import Flask, request, send_file, render_template, jsonify
+print(">>> DEBUG: Starting Flask App...")
 from pptx import Presentation
+
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
