@@ -32,7 +32,7 @@ An AI-powered Presentation Generator built with Python and Flask that automatica
 - Flask
 
 ### AI Integration
-- OpenAI API / Gemini API
+- Groq API / Gemini API
 
 ### Deployment
 - Vercel
