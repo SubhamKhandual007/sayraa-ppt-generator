@@ -369,6 +369,26 @@ def index():
 def favicon():
     return send_file(os.path.join(app.root_path, 'static', 'favicon.ico'), mimetype='image/vnd.microsoft.icon')
 
+@app.route('/sitemap.xml')
+def sitemap():
+    import datetime
+    today = datetime.date.today().isoformat()
+    sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{request.host_url}</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"""
+    return app.response_class(sitemap_xml, mimetype='application/xml')
+
+@app.route('/robots.txt')
+def robots():
+    robots_txt = f"User-agent: *\nAllow: /\nSitemap: {request.host_url}sitemap.xml\n"
+    return app.response_class(robots_txt, mimetype='text/plain')
+
 @app.route('/generate', methods=['POST'])
 def generate_ppt():
     data = request.get_json()
