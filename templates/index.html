@@ -3,20 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SuuSri AI generates stunning PowerPoint presentations instantly using AI. Choose smart templates, enter your topic, and download professional PPTX slides powered by Llama 3 and Gemini.">
     <meta name="google-site-verification" content="fULAZoWBL-SWni01nhW5QHS1LaekjxGITUZcg9lrvJc" />
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://suusri-ai.vercel.app/">
     <title>SuuSri AI - Presentation Generator</title>
+
+    <!-- Preconnect to external origins for faster resource loading -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Google Fonts (moved from CSS @import to eliminate render-blocking waterfall) -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet"></noscript>
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Material Icons (non-blocking) -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     
     <!-- PWA and App Icons -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#0d6efd">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo-192.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo-192.png') }}">
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "SuuSri AI",
+        "description": "Create stunning PowerPoint presentations with AI. Powered by Llama 3 and Gemini.",
+        "url": "https://suusri-ai.vercel.app/",
+        "applicationCategory": "Productivity",
+        "operatingSystem": "All",
+        "creator": {
+            "@type": "Person",
+            "name": "Subham Khandual"
+        }
+    }
+    </script>
 </head>
 <body>
     <div class="container-fluid main-container">
@@ -62,7 +96,7 @@
                                 <div class="mb-3">
                                     <label for="title" class="form-label fw-bold">
                                         <span class="material-icons align-middle">title</span> Presentation Title
-                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2 voice-btn" data-target="title" title="Voice Input">
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2 voice-btn" data-target="title" title="Voice Input" aria-label="Voice input for title">
                                             <span class="material-icons align-middle" style="font-size: 18px;">mic</span>
                                         </button>
                                     </label>
@@ -71,7 +105,7 @@
                                 <div class="mb-3">
                                     <label for="topic" class="form-label fw-bold">
                                         <span class="material-icons align-middle">topic</span> Main Topic/Theme
-                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2 voice-btn" data-target="topic" title="Voice Input">
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2 voice-btn" data-target="topic" title="Voice Input" aria-label="Voice input for topic">
                                             <span class="material-icons align-middle" style="font-size: 18px;">mic</span>
                                         </button>
                                     </label>
@@ -101,7 +135,7 @@
                     <div class="p-3">
                         <span class="material-icons text-primary fs-1 mb-2">auto_awesome</span>
                         <h5>AI Optimized</h5>
-                        <p class="small text-muted">Smart bullet points and key takeaways generated by Llama 3 & Gemini.</p>
+                        <p class="small text-muted">Smart bullet points and key takeaways generated by Llama 3 &amp; Gemini.</p>
                     </div>
                 </div>
                 <div class="col-md-3 mb-4">
@@ -129,17 +163,16 @@
         </div>
     </div>
 
-        <!-- Footer -->
-        <footer class="text-center py-3 bg-dark text-white fixed-bottom">
-            <p class="mb-0">&copy; 2026 SuuSri AI. Created by Subham Khandual. Powered by Groq & Gemini.</p>
-        </footer>
-    </div>
+    <!-- Footer -->
+    <footer class="text-center py-3 bg-dark text-white fixed-bottom">
+        <p class="mb-0">&copy; 2026 SuuSri AI. Created by Subham Khandual. Powered by Groq &amp; Gemini.</p>
+    </footer>
 
-    <!-- Bootstrap JS and Popper.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <!-- Bootstrap JS and Popper.js (deferred to avoid blocking render) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js" defer></script>
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
     
     <!-- PWA Service Worker Registration -->
     <script>

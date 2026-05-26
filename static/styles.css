@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+/* Font is now loaded via <link> in HTML to avoid render-blocking @import */
 
 :root {
     --primary: #1e3a8a;
@@ -20,6 +20,7 @@ body {
 
 .main-container {
     padding-bottom: 60px;
+    contain: layout style;
 }
 
 header {
@@ -36,7 +37,8 @@ header {
     backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
 }
 
 .card:hover {
@@ -54,7 +56,7 @@ header {
     border: 1px solid #e2e8f0;
     padding: 0.75rem 1rem;
     background-color: white;
-    transition: all 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-control:focus, .form-select:focus {
@@ -70,7 +72,7 @@ header {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    transition: all 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .btn-primary:hover {
@@ -86,8 +88,11 @@ header {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    min-width: 44px;
+    min-height: 44px;
     background: rgba(59, 130, 246, 0.1);
-    transition: all 0.2s;
+    transition: background 0.2s, transform 0.2s;
 }
 
 .voice-btn:hover {
@@ -101,7 +106,7 @@ footer {
     font-weight: 300;
 }
 
-/* Animations */
+/* Animations - using transform only for GPU compositing */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -121,5 +126,9 @@ footer {
     }
     footer {
         position: relative !important;
+    }
+    /* Ensure tap targets are at least 48px for mobile */
+    .btn, .form-control, .form-select {
+        min-height: 48px;
     }
 }
