@@ -367,7 +367,11 @@ def index():
 
 @app.route('/favicon.ico')
 def favicon():
-    return send_file(os.path.join(app.root_path, 'static', 'favicon.ico'), mimetype='image/vnd.microsoft.icon')
+    return send_file(os.path.join(app.root_path, 'static', 'logo-192.png'), mimetype='image/png')
+
+@app.route('/manifest.json')
+def manifest():
+    return send_file(os.path.join(app.root_path, 'static', 'manifest.json'), mimetype='application/manifest+json')
 
 @app.route('/sitemap.xml')
 def sitemap():
