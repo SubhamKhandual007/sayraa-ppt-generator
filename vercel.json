@@ -6,11 +6,10 @@
       "use": "@vercel/python"
     }
   ],
+  "static": {
+    "directory": "static"
+  },
   "rewrites": [
-    {
-      "source": "/static/(.*)",
-      "destination": "/static/$1"
-    },
     {
       "source": "/(.*)",
       "destination": "/app.py"
