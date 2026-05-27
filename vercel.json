@@ -6,28 +6,10 @@
       "use": "@vercel/python"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/favicon.ico",
-      "dest": "/static/logo-192.png"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/static/manifest.json"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "app.py"
+      "source": "/(.*)",
+      "destination": "/app.py"
     }
   ]
 }
