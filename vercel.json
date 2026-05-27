@@ -8,6 +8,14 @@
   ],
   "routes": [
     {
+      "src": "/favicon.ico",
+      "dest": "/static/logo-192.png"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/static/manifest.json"
+    },
+    {
       "handle": "filesystem"
     },
     {
