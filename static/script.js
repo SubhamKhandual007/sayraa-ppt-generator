@@ -43,19 +43,29 @@ if (SpeechRecognition) {
     voiceBtns.forEach(btn => btn.style.display = 'none');
 }
 
-document.getElementById('pptForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+document.getElementById('pptForm').addEventListener('submit', function (e) {
+    // Dynamically create or retrieve the hidden iframe
+    let iframe = document.getElementById('download_iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'download_iframe';
+        iframe.name = 'download_iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+    }
+    
+    // Set form target to the hidden iframe
+    this.action = '/generate';
+    this.method = 'POST';
+    this.target = 'download_iframe';
 
-    const title = document.getElementById('title').value;
-    const topic = document.getElementById('topic').value;
-    const language = document.getElementById('language').value;
-    const template = document.getElementById('template').value;
-    const num_slides = 8;
-    const format = 'pptx';
+    // Clear previous download cookies
+    document.cookie = "ppt_downloaded=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "ppt_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
     const statusText = document.getElementById('statusText');
     const timer = document.getElementById('timer');
     const downloadButtons = document.getElementById('downloadButtons');
-    const downloadLink = document.getElementById('downloadLink');
 
     statusText.textContent = 'Generating masterpiece...';
     statusText.className = 'text-muted';
@@ -68,37 +78,35 @@ document.getElementById('pptForm').addEventListener('submit', async (e) => {
         timer.textContent = `${seconds}s`;
     }, 1000);
 
-    try {
-        const response = await fetch('/generate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ title, topic, language, template, format, num_slides }),
-        });
+    const checkInterval = setInterval(() => {
+        // Parse current cookies
+        const cookies = document.cookie.split(';').reduce((acc, c) => {
+            const [key, val] = c.trim().split('=');
+            if (key) acc[key] = decodeURIComponent(val || '');
+            return acc;
+        }, {});
 
-        clearInterval(timerInterval);
-
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || 'Failed to generate presentation');
+        if (cookies.ppt_downloaded === 'true') {
+            clearInterval(timerInterval);
+            clearInterval(checkInterval);
+            
+            // Delete the cookie
+            document.cookie = "ppt_downloaded=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            
+            statusText.textContent = 'Success! Your masterpiece is downloaded.';
+            statusText.className = 'text-success';
+            timer.classList.add('d-none');
+        } else if (cookies.ppt_error) {
+            clearInterval(timerInterval);
+            clearInterval(checkInterval);
+            
+            const errorMsg = cookies.ppt_error;
+            // Delete the cookie
+            document.cookie = "ppt_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            
+            statusText.textContent = `Error: ${errorMsg}`;
+            statusText.className = 'text-danger';
+            timer.classList.add('d-none');
         }
-
-        const resData = await response.json();
-
-        downloadLink.href = resData.download_url;
-        downloadLink.download = resData.download_name;
-        downloadButtons.classList.remove('d-none');
-        statusText.textContent = 'Success! Your masterpiece is ready.';
-        statusText.className = 'text-success';
-        timer.classList.add('d-none');
-
-        // Auto-trigger download for mobile compatibility
-        window.location.href = resData.download_url;
-    } catch (error) {
-        clearInterval(timerInterval);
-        statusText.textContent = `Error: ${error.message}`;
-        statusText.className = 'text-danger';
-        timer.classList.add('d-none');
-    }
+    }, 500);
 });
