@@ -393,8 +393,28 @@ def robots():
     robots_txt = f"User-agent: *\nAllow: /\nSitemap: {request.host_url}sitemap.xml\n"
     return app.response_class(robots_txt, mimetype='text/plain')
 
+def cleanup_old_files():
+    try:
+        import tempfile
+        import time
+        temp_dir = os.path.join(tempfile.gettempdir(), 'suusri_ppt')
+        if os.path.exists(temp_dir):
+            now = time.time()
+            for f in os.listdir(temp_dir):
+                fp = os.path.join(temp_dir, f)
+                if os.path.isfile(fp):
+                    # Delete files older than 10 minutes (600 seconds)
+                    if now - os.path.getmtime(fp) > 600:
+                        try:
+                            os.remove(fp)
+                        except Exception:
+                            pass
+    except Exception as e:
+        print(f"Error cleaning up old files: {e}")
+
 @app.route('/generate', methods=['POST'])
 def generate_ppt():
+    cleanup_old_files()
     data = request.get_json()
     title = data.get('title')
     topic = data.get('topic')
@@ -407,15 +427,65 @@ def generate_ppt():
 
     try:
         buffer = create_presentation(title, topic, language, num_slides, template)
-        return send_file(
-            buffer,
-            as_attachment=True,
-            download_name=f"{title.replace(' ', '_')}_Presentation.pptx",
-            mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        )
+        
+        # Save presentation buffer to a temporary file
+        import uuid
+        import tempfile
+        file_id = str(uuid.uuid4())
+        temp_dir = os.path.join(tempfile.gettempdir(), 'suusri_ppt')
+        os.makedirs(temp_dir, exist_ok=True)
+        file_path = os.path.join(temp_dir, f"{file_id}.pptx")
+        
+        with open(file_path, 'wb') as f:
+            f.write(buffer.getvalue())
+            
+        download_name = f"{title.replace(' ', '_')}_Presentation.pptx"
+        return jsonify({
+            'success': True,
+            'file_id': file_id,
+            'download_url': f"/download/{file_id}?name={download_name}",
+            'download_name': download_name
+        })
     except Exception as e:
         print(f"Generation error: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/download/<file_id>')
+def download_file(file_id):
+    import re
+    import tempfile
+    import io
+    if not re.match(r'^[a-f0-9\-]+$', file_id):
+        return "Invalid file ID", 400
+        
+    temp_dir = os.path.join(tempfile.gettempdir(), 'suusri_ppt')
+    file_path = os.path.join(temp_dir, f"{file_id}.pptx")
+    
+    if not os.path.exists(file_path):
+        return "File not found or expired", 404
+        
+    # Read file content into memory
+    try:
+        with open(file_path, 'rb') as f:
+            data = io.BytesIO(f.read())
+    except Exception as e:
+        print(f"Error reading file into memory: {e}")
+        return "Error reading file", 500
+        
+    # Delete the temporary file on disk immediately
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        print(f"Error removing temp file: {e}")
+        
+    download_name = request.args.get('name', 'Presentation.pptx')
+    
+    return send_file(
+        data,
+        as_attachment=True,
+        download_name=download_name,
+        mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    )
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

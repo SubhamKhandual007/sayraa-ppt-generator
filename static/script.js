@@ -84,16 +84,17 @@ document.getElementById('pptForm').addEventListener('submit', async (e) => {
             throw new Error(errData.error || 'Failed to generate presentation');
         }
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const resData = await response.json();
 
-        downloadLink.href = url;
-        const extension = format === 'pdf' ? 'pdf' : 'pptx';
-        downloadLink.download = `${title.replace(/\s+/g, '_')}_Presentation.${extension}`;
+        downloadLink.href = resData.download_url;
+        downloadLink.download = resData.download_name;
         downloadButtons.classList.remove('d-none');
         statusText.textContent = 'Success! Your masterpiece is ready.';
         statusText.className = 'text-success';
         timer.classList.add('d-none');
+
+        // Auto-trigger download for mobile compatibility
+        window.location.href = resData.download_url;
     } catch (error) {
         clearInterval(timerInterval);
         statusText.textContent = `Error: ${error.message}`;

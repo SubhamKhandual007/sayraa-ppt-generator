@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   // Stale-while-revalidate for static assets, network-first for API
-  if (event.request.url.includes('/generate')) {
+  if (event.request.url.includes('/generate') || event.request.url.includes('/download')) {
     event.respondWith(fetch(event.request));
     return;
   }
