@@ -44,21 +44,6 @@ if (SpeechRecognition) {
 }
 
 document.getElementById('pptForm').addEventListener('submit', function (e) {
-    // Dynamically create or retrieve the hidden iframe
-    let iframe = document.getElementById('download_iframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'download_iframe';
-        iframe.name = 'download_iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-    }
-    
-    // Set form target to the hidden iframe
-    this.action = '/generate';
-    this.method = 'POST';
-    this.target = 'download_iframe';
-
     // Clear previous download cookies
     document.cookie = "ppt_downloaded=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "ppt_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
