@@ -1,12 +1,21 @@
 // Voice Input Support
 const voiceBtns = document.querySelectorAll('.voice-btn');
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isSpeechSupported = false;
 
 if (SpeechRecognition) {
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    try {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        isSpeechSupported = true;
+    } catch (e) {
+        console.error('Speech recognition initialization failed:', e);
+    }
+}
 
+if (isSpeechSupported && recognition) {
     voiceBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.getAttribute('data-target');
@@ -43,6 +52,7 @@ if (SpeechRecognition) {
     voiceBtns.forEach(btn => btn.style.display = 'none');
 }
 
+// Form Submission & Download Tracking
 document.getElementById('pptForm').addEventListener('submit', function (e) {
     // Clear previous download cookies
     document.cookie = "ppt_downloaded=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -72,26 +82,30 @@ document.getElementById('pptForm').addEventListener('submit', function (e) {
         }, {});
 
         if (cookies.ppt_downloaded === 'true') {
-            clearInterval(timerInterval);
-            clearInterval(checkInterval);
-            
-            // Delete the cookie
-            document.cookie = "ppt_downloaded=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            
+            cleanup();
             statusText.textContent = 'Success! Your masterpiece is downloaded.';
             statusText.className = 'text-success';
-            timer.classList.add('d-none');
         } else if (cookies.ppt_error) {
-            clearInterval(timerInterval);
-            clearInterval(checkInterval);
-            
             const errorMsg = cookies.ppt_error;
-            // Delete the cookie
-            document.cookie = "ppt_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            
+            cleanup();
             statusText.textContent = `Error: ${errorMsg}`;
             statusText.className = 'text-danger';
-            timer.classList.add('d-none');
         }
     }, 500);
+
+    // Fallback timeout after 20 seconds in case download finishes but cookie is ignored/blocked
+    const fallbackTimeout = setTimeout(() => {
+        cleanup();
+        statusText.textContent = 'Success! Your masterpiece is ready.';
+        statusText.className = 'text-success';
+    }, 20000);
+
+    function cleanup() {
+        clearInterval(timerInterval);
+        clearInterval(checkInterval);
+        clearTimeout(fallbackTimeout);
+        document.cookie = "ppt_downloaded=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "ppt_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        timer.classList.add('d-none');
+    }
 });

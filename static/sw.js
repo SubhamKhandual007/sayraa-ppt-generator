@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suusri-ai-v2';
+const CACHE_NAME = 'suusri-ai-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/styles.css',
