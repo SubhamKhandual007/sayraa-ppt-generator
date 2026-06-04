@@ -9,7 +9,6 @@ from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 import google.generativeai as genai
 from groq import Groq
-from openai import OpenAI
 from dotenv import load_dotenv
 import random
 
@@ -22,7 +21,6 @@ load_dotenv()
 # Configure APIs safely
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_KEY = os.getenv("GROQ_API_KEY")
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
@@ -36,12 +34,6 @@ if GROQ_KEY:
 else:
     groq_client = None
     print("Warning: GROQ_API_KEY not found.")
-
-if OPENAI_KEY:
-    openai_client = OpenAI(api_key=OPENAI_KEY)
-else:
-    openai_client = None
-    print("Warning: OPENAI_API_KEY not found.")
 
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
@@ -115,84 +107,7 @@ def generate_slide_content(section, topic, language):
         print(f"Error generating content for {section}: {e}")
         return f"• Content for {section} could not be generated.\n• Please add details manually."
 
-def generate_image_prompt(section, topic):
-    try:
-        prompt = (
-            f"Write a highly descriptive, professional DALL-E image generation prompt for a presentation slide about '{section}' (part of a presentation on '{topic}'). "
-            "The image style must be a modern, clean, minimalist flat vector illustration, suitable for a professional slide deck. "
-            "Specify that it should have a solid white background, use professional corporate colors, and contain absolutely NO text, labels, or words. "
-            "Return ONLY the DALL-E prompt string. Do not include any intro, markdown, or quotes."
-        )
-        # Try Groq first
-        try:
-            if not groq_client:
-                raise Exception("Groq client not initialized")
-            completion = groq_client.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return completion.choices[0].message.content.strip().replace('"', '')
-        except Exception:
-            if not gemini_model:
-                return f"A clean, minimalist vector illustration representing {section} for a presentation about {topic}, professional design, white background, no text."
-            response = gemini_model.generate_content(prompt)
-            return response.text.strip().replace('"', '')
-    except Exception:
-        return f"A clean, minimalist vector illustration representing {section} for a presentation about {topic}, professional design, white background, no text."
 
-def generate_and_download_image(prompt):
-    import urllib.request
-    import tempfile
-    import time
-    
-    if not openai_client:
-        print("OpenAI client not configured, skipping image generation.")
-        return None
-        
-    try:
-        # Use DALL-E 3 for high-quality professional presentation images
-        # We fall back to DALL-E 2 if there's any model/quota issue or if we want smaller sizes
-        print(f"Generating image for prompt: {prompt[:100]}...")
-        try:
-            response = openai_client.images.generate(
-                model="dall-e-3",
-                prompt=prompt,
-                n=1,
-                size="1024x1024",
-                quality="standard"
-            )
-        except Exception as e:
-            print(f"DALL-E 3 failed ({e}), trying DALL-E 2 fallback...")
-            response = openai_client.images.generate(
-                model="dall-e-2",
-                prompt=prompt,
-                n=1,
-                size="512x512"
-            )
-            
-        image_url = response.data[0].url
-        if not image_url:
-            return None
-            
-        # Download the image to a temporary file
-        temp_dir = os.path.join(tempfile.gettempdir(), 'sayraa_ppt')
-        os.makedirs(temp_dir, exist_ok=True)
-        
-        # Unique file name
-        temp_file_path = os.path.join(temp_dir, f"img_{int(time.time())}_{random.randint(1000, 9999)}.png")
-        
-        # Download the URL
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        req = urllib.request.Request(image_url, headers=headers)
-        with urllib.request.urlopen(req) as response_stream:
-            with open(temp_file_path, 'wb') as out_file:
-                out_file.write(response_stream.read())
-                
-        print(f"Successfully generated and downloaded image to: {temp_file_path}")
-        return temp_file_path
-    except Exception as e:
-        print(f"Error in generate_and_download_image: {e}")
-        return None
 
 def get_template_styles(template_name, theme_colors):
     """Define styles for different templates."""
@@ -320,7 +235,7 @@ def add_content_page(prs, sections, topic, theme):
         p.alignment = PP_ALIGN.CENTER
     add_watermark(slide)
 
-def add_content_slide(prs, title_text, content_text, topic, template_style, section, image_path=None):
+def add_content_slide(prs, title_text, content_text, topic, template_style, section):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     for shape in slide.placeholders:
         sp = shape.element
@@ -350,13 +265,9 @@ def add_content_slide(prs, title_text, content_text, topic, template_style, sect
     line.fill.fore_color.rgb = template_style['accent']
     line.line.visible = False
 
-    # Content Box (adjust size if image is present)
-    if image_path:
-        content_width = Inches(4.5)
-        content_left = Inches(0.5)
-    else:
-        content_width = Inches(8.5)
-        content_left = Inches(0.75)
+    # Content Box (Full Width Minimalist)
+    content_width = Inches(8.5)
+    content_left = Inches(0.75)
     
     if template_style['shape']:
         content_box = slide.shapes.add_shape(
@@ -379,21 +290,9 @@ def add_content_slide(prs, title_text, content_text, topic, template_style, sect
     tf.word_wrap = True
     p = tf.add_paragraph()
     p.text = content_text
-    p.font.size = Pt(18 if image_path else 20)
+    p.font.size = Pt(20)
     p.font.color.rgb = template_style['text_color']
     
-    # Add Image if present
-    if image_path:
-        try:
-            # Place on the right side
-            img_left = Inches(5.4)
-            img_top = Inches(1.8)
-            img_width = Inches(4.0)
-            img_height = Inches(4.0)
-            slide.shapes.add_picture(image_path, img_left, img_top, width=img_width, height=img_height)
-        except Exception as e:
-            print(f"Error adding picture to slide: {e}")
-            
     add_watermark(slide)
 
 def add_thank_you_slide(prs, theme):
@@ -452,21 +351,9 @@ def create_presentation(title, topic, language, num_slides, template_name):
     add_welcome_slide(prs, title, theme)
     add_content_page(prs, sections, topic, theme)
     
-    image_paths = []
-    try:
-        for section in sections:
-            content = generate_slide_content(section, topic, language)
-            
-            image_path = None
-            if openai_client:
-                image_prompt = generate_image_prompt(section, topic)
-                image_path = generate_and_download_image(image_prompt)
-                if image_path:
-                    image_paths.append(image_path)
-                    
-            add_content_slide(prs, section, content, topic, style, section, image_path=image_path)
-    except Exception as e:
-        print(f"Error during presentation slide creation loop: {e}")
+    for section in sections:
+        content = generate_slide_content(section, topic, language)
+        add_content_slide(prs, section, content, topic, style, section)
         
     add_thank_you_slide(prs, theme)
     
@@ -474,14 +361,6 @@ def create_presentation(title, topic, language, num_slides, template_name):
     prs.save(buffer)
     buffer.seek(0)
     
-    # Clean up temporary image files
-    for path in image_paths:
-        try:
-            if os.path.exists(path):
-                os.remove(path)
-        except Exception as e:
-            print(f"Error removing temporary image file {path}: {e}")
-            
     return buffer
 
 # Flask routes
