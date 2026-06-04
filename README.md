@@ -1,4 +1,4 @@
-# PPT Generator
+# Sayraa AI PPT Generator
 
 An intelligent PowerPoint presentation generator powered by AI. This application leverages advanced language models (Google Generative AI and Groq) to automatically generate professional presentations from text input.
 

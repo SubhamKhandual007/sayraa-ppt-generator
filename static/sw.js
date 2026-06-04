@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suusri-ai-v3';
+const CACHE_NAME = 'sayraa-ai-ppt-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/styles.css',

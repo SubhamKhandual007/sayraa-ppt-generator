@@ -7,3 +7,4 @@ python-pptx
 google-generativeai
 python-dotenv
 groq
+openai
