@@ -116,20 +116,6 @@ footer {
     animation: fadeIn 0.8s ease-out;
 }
 
-.header-logo {
-    height: 100px;
-    width: auto;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-}
-
-.header-logo:hover {
-    transform: scale(1.05) translateY(-2px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
     header {
