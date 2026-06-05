@@ -26,7 +26,7 @@ ppt-generator/
 │   ├── logo.png
 │   ├── manifest.json
 │   ├── script.js
-│   └── style.css
+│   └── styles.css
 └── templates/
     └── index.html
 ```
@@ -43,10 +43,10 @@ ppt-generator/
 - **`runtime.txt`** - Runtime version for deployment
 
 **`static/` Directory - Frontend Assets:**
-- **`logo.png`** - Application logo (685 KB)
+- **`logo.png`** - Application logo (~175 KB, optimized)
 - **`manifest.json`** - PWA (Progressive Web App) manifest configuration
 - **`script.js`** - Client-side JavaScript logic and interactions
-- **`style.css`** - Application styling and responsive design
+- **`styles.css`** - Application styling and responsive design
 
 **`templates/` Directory - HTML Templates:**
 - **`index.html`** - Main application interface (Jinja2 template)
@@ -152,7 +152,7 @@ The application includes PWA support:
 ## 🎨 Frontend
 
 - **HTML** - `templates/index.html`
-- **CSS** - `static/style.css`
+- **CSS** - `static/styles.css`
 - **JavaScript** - `static/script.js`
 - **Logo** - `static/logo.png`
 
